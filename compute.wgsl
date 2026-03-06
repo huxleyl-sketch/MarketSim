@@ -5,15 +5,17 @@ struct Maker {
 
 //Takes options
 struct Taker {
-    stockAmt:f32,
+    stockAmt:u32,
 }
 
 struct Buy_Option {
-    price:u32,
+    set: bool,
+    price:f32,
     size:u32,
 }
 struct Sell_Option {
-    price:u32,
+    set: bool,
+    price:f32,
     size:u32,
 }
 
@@ -30,31 +32,33 @@ struct Sell_Option {
 @group(0) @binding(4) var<storage, read_write> makers : array<Maker>;
 @group(0) @binding(5) var<storage, read_write> takers : array<Taker>;
 
-@group(0) @binding(6) var<storage, read_write> stock : array<u32>;
+@group(0) @binding(6) var<storage, read_write> stock : array<f32>;
 
-fn create_buy_option(_id : u32, _price : u32, _size : u32){
+fn create_buy_option(_id : u32, _price : f32, _size : u32){
     //"I will buy for this price"
     //Add the option to the buy book
-
-    buyBook[_id].price = _price;
-    buyBook[_id].size = _size;
+    if(!buyBook[_id].set){
+        buyBook[_id].price = _price;
+        buyBook[_id].size = _size;
+    }
 }
 
-fn create_sell_option(_id : u32, _price : u32, _size : u32){
+fn create_sell_option(_id : u32, _price : f32, _size : u32){
     //"I will sell for this price"
     //Add the option to the sell book
-
-    sellBook[_id].price = _price;
-    sellBook[_id].size = _size;
+    if(!sellBook[_id].set){
+        sellBook[_id].price = _price;
+        sellBook[_id].size = _size;
+    }
 }
 
-fn buy_option(_id: u32, _price : u32, _size : u32){
+fn buy_option(_id: u32, _price : f32, _size : u32){
     //"I buy for that price"
-    sellBookOut[_id] = true;
+    sellBookOut[_id] = {set = false, price = _price, size = _size};
 }
-fn sell_option(_id: u32){
+fn sell_option(_id: u32, _price : f32, _size : u32){
     //"I sell for that price"
-    buyBookOut[_id] = true;
+    buyBookOut[_id] = {set = false, price = _price, size = _size};
 }
 
 const makersLength : u32 = 1000;
@@ -70,7 +74,7 @@ fn run_makers(@builtin(global_invocation_id) id : vec3u){
     let r3 = rand01(i * u32(r2 * 100));
 
     //Generate price = stock * random :- [1.01,0.99]
-    let price = u32( f32(stock[0]) * (1.0 + (r2 * 2.0 - 1.0)/100.0) );
+    let price = f32(stock[0]) * (1.0 + (r2 * 2.0 - 1.0)/100.0);
 
     if (r1 > 0.5){
         if(cur.stockAmt > 0){
@@ -110,27 +114,15 @@ fn run_takers(@builtin(global_invocation_id) id : vec3u){
 
     let cur = takers[i];
 
-    let r1 = rand01(i);
-    let r2 = rand01(i * u32(r1 * 100));
-    let r3 = rand01(i * u32(r2 * 100));
-
-    if (r1 > 0.5){
-        if(cur.stockAmt > 0){
-            //Create sell option
-
-            //Generate size
-            let size = u32( r3 * f32(cur.stockAmt) );
-
-            create_sell_option(i, price, size);
-        }
+    //check both buy and sell books against stock price
+    let curPrice = stock[0];
+    let curBuy = buyBook[i];
+    let curSell = sellBook[i];
+    if((curPrice - curBuy.price) / curPrice < 0.01){
+        buy_option(i,curBuy.price,curBuy.size);
     }
-    else{
-        //Create buy option
-
-        //Generate size
-        let size = u32( r3 * 100.0 );
-
-        create_buy_option(i, price, size);
+    if((curPrice - curSell.price) / curPrice < 0.01){
+        sell_option(i,curSell.price,curSell.size);
     }
     
 }
