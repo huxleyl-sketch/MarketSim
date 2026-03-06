@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MarketSim GPU</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel">
+        <div class="title-row">
+          <h1>MarketSim GPU</h1>
+          <div class="status" id="status">idle</div>
+        </div>
+
+        <div class="controls">
+          <button id="startBtn">Start</button>
+          <button id="stopBtn" disabled>Stop</button>
+          <button id="stepBtn">Step</button>
+          <label class="inline">
+            Stock
+            <input id="stockInput" type="number" step="0.1" value="100" />
+          </label>
+          <button id="setStockBtn">Set</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Stock</div>
+            <div class="value" id="stockValue">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Buy Orders</div>
+            <div class="value" id="buyCount">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Sell Orders</div>
+            <div class="value" id="sellCount">-</div>
+          </div>
+          <div class="stat">
+            <div class="label">Last Step (ms)</div>
+            <div class="value" id="stepMs">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Top Orders (first 12)</h2>
+        <div class="tables">
+          <div>
+            <h3>Buy Book</h3>
+            <pre id="buyBook">-</pre>
+          </div>
+          <div>
+            <h3>Sell Book</h3>
+            <pre id="sellBook">-</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
