@@ -147,3 +147,11 @@ pre {
   max-height: 280px;
   overflow: auto;
 }
+
+canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fbfbfb 0%, #f3f3f3 100%);
+}
