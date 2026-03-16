@@ -1,5 +1,6 @@
 import { Market } from "./market.js";
 import { Graph } from "./market.js";
+import { Orderbook } from "./order_book.js";
 
 
 let canvas: HTMLCanvasElement;
