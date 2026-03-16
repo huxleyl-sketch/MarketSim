@@ -9,18 +9,26 @@ class Market {
     /** Total amount of Stock */
     stock: number;
 
+    /** Percentage of stock that can be traded */
+    stock_per_order: number
+
     sellBook: Orderbook;
 
     buyBook: Orderbook;
     
-    graph: Graph;
-    
-    constructor (initialPrice: number, stock: number, canvas: HTMLCanvasElement) {
+    /**
+     * 
+     * @param initialPrice
+     * @param stock 
+     * @param stock_per_order Percentage of stock that can be traded
+     * @param canvas 
+     */
+    constructor ( initialPrice: number, stock: number, stock_per_order: number ) {
         
         /** Initialising Default Values */
         this.lastPrice = initialPrice;
         this.stock = stock;
-        this.graph = new Graph(canvas,[],10);
+        this.stock_per_order = stock_per_order;
 
         /** Initialising the sellBook */
         this.sellBook = new Orderbook();
@@ -30,11 +38,18 @@ class Market {
         this.buyBook = new Orderbook();
 
     }
-    addSellOrder () { this.sellBook.tickAdd( this.lastPrice,_maxOrderSize ); }
-    removeSellOrder () { this.sellBook.tickRemove( _maxOrderSize ); }
 
-    addBuyOrder(){ this.buyBook.tickAdd(this.lastPrice,_maxOrderSize); }
-    removeBuyOrder () { this.buyBook.tickRemove( _maxOrderSize ); }
+    makeOrder () {
+        let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order )
+        this.buyBook.tick_add( amount );
+        this.sellBook.tick_add( amount );
+    }
+
+    takeOrder () {
+        let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order );
+        this.buyBook.tick_remove( amount );
+        this.sellBook.tick_remove( amount );
+    }
 }
 
 class Graph { 
