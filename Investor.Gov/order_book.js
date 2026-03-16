@@ -1,4 +1,3 @@
-import { market } from "./main.js";
 /*
 Order book is a list of pending orders - indefinate
 
@@ -52,14 +51,14 @@ export class Orderbook {
         return tSize;
     }
     /** Adds an order at a Tick */
-    tick_add(maxSize) {
+    tick_add(maxSize, lastPrice) {
         const r1 = Math.random();
         /** 5/1000 chance */
         if (r1 < 0.005) {
             /** oPrice :- [0.99 * lastPrice, 1.01 * lastPrice] */
             const r2 = Math.random();
             const radius = (2 * r2 - 1) / 100;
-            let oPrice = market.lastPrice * (1 + radius);
+            let oPrice = lastPrice * (1 + radius);
             /** oSize :- [0,_maxOrderSize] */
             const r3 = Math.random();
             let oSize = r3 * maxSize;

@@ -43,8 +43,8 @@ export class Market {
 
     makeOrder () {
         let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order )
-        this.buyBook.tick_add( amount );
-        this.sellBook.tick_add( amount );
+        this.buyBook.tick_add( amount, this.lastPrice );
+        this.sellBook.tick_add( amount, this.lastPrice );
     }
 
     takeOrder () {
@@ -119,4 +119,3 @@ export class Graph {
     }
 
 }
-
