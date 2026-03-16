@@ -1,4 +1,4 @@
-import { market } from "./main";
+import { market } from "./main.js";
 /*
 Order book is a list of pending orders - indefinate
 

@@ -1,5 +1,5 @@
-import { Market } from "./market";
-import { Graph } from "./market";
+import { Market } from "./market.js";
+import { Graph } from "./market.js";
 
 
 let canvas: HTMLCanvasElement;
@@ -10,6 +10,7 @@ const initialPrice = 100;
 
 let ticks = 0;
 
+main();
 function main(){
     
     /** 

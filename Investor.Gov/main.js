@@ -1,11 +1,12 @@
-import { Market } from "./market";
-import { Graph } from "./market";
+import { Market } from "./market.js";
+import { Graph } from "./market.js";
 let canvas;
 export let market;
 let graph;
 const stock = 1000;
 const initialPrice = 100;
 let ticks = 0;
+main();
 function main() {
     /**
      * Initialise:

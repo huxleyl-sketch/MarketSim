@@ -1,4 +1,4 @@
-import { Orderbook } from "./order_book";
+import { Orderbook } from "./order_book.js";
 const _maxOrderSize = 100;
 export class Market {
     lastPrice;

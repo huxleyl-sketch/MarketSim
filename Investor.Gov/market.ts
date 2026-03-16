@@ -1,4 +1,4 @@
-import { Orderbook } from "./order_book";
+import { Orderbook } from "./order_book.js";
 
 type candle = { min: number, max : number, open: number, close: number }
 
