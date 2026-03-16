@@ -1,36 +1,33 @@
-import i_Main = require("./main");
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Orderbook = void 0;
+const i_Main = require("./main");
 /*
 Order book is a list of pending orders - indefinate
 
 Needs to transfer them to Market Orders - On some condition
 */
-
 /* Generalising the principle that individual traders don't matter, iff, the trades and amount of stock are accounted for. */
-
-export class Orderbook {
-
+class Orderbook {
     /**
      *  All current orders in book.
-     *  Map<price, {size,condition}> 
+     *  Map<price, {size,condition}>
      */
-    orders: Map<number, {size:number , con: (price: number) => boolean}>;
+    orders;
     /** Total amount of stock in orders */
-    total: number
-
-    constructor ( ) {
+    total;
+    constructor() {
         this.orders = new Map();
         this.total = 0;
     }
-
-    private add_order ( oPrice: number, oSize: number, isAbove: boolean ) {
-        if(this.orders.has(oPrice)) return;
-
+    add_order(oPrice, oSize, isAbove) {
+        if (this.orders.has(oPrice))
+            return;
         this.orders.set(oPrice, {
             size: oSize,
             /** traded price is either higher or lower than order price */
             con: isAbove ? (tPrice) => tPrice < oPrice : (tPrice) => tPrice > oPrice
         });
-
         this.total += oSize;
     }
     /**
@@ -38,65 +35,57 @@ export class Orderbook {
      * @param oSize Order Size
      * @returns Trade Size, or -1 on failure
      */
-    private remove_order ( oPrice: number, oSize: number ): number {
-
+    remove_order(oPrice, oSize) {
         let order = this.orders.get(oPrice);
-
-        if ( !order ) { return -1; }
-        
-        if ( !order.con( oPrice ) ) { return -1; };
-
+        if (!order) {
+            return -1;
+        }
+        if (!order.con(oPrice)) {
+            return -1;
+        }
+        ;
         /** Traded Size */
-        let tSize = Math.min( oSize, order.size );
-
+        let tSize = Math.min(oSize, order.size);
         /** Remaining Size */
         let rSize = order.size - tSize;
-
-        if ( rSize <= 0 ) this.orders.delete( oPrice );
-
-        this.orders.set( oPrice, {size: rSize, con: order.con} );
-
+        if (rSize <= 0)
+            this.orders.delete(oPrice);
+        this.orders.set(oPrice, { size: rSize, con: order.con });
         this.total -= tSize;
-
         return tSize;
-    } 
-    
+    }
     /** Adds an order at a Tick */
-    tick_add (maxSize: number ) {
+    tick_add(maxSize) {
         const r1 = Math.random();
-
         /** 5/1000 chance */
-        if ( r1 < 0.005 ) {
-
+        if (r1 < 0.005) {
             /** oPrice :- [0.99 * lastPrice, 1.01 * lastPrice] */
             const r2 = Math.random();
             const radius = (2 * r2 - 1) / 100;
-            let oPrice =  i_Main.market.lastPrice * (1 + radius);
-
+            let oPrice = i_Main.market.lastPrice * (1 + radius);
             /** oSize :- [0,_maxOrderSize] */
             const r3 = Math.random();
             let oSize = r3 * maxSize;
-
             const r4 = Math.random();
             let isAbove = r4 > 0.5;
-
             /** Doesn't Execute if oPrice already holds an Order */
-            this.add_order( oPrice, oSize, isAbove );
+            this.add_order(oPrice, oSize, isAbove);
         }
-        
     }
-    tick_remove ( maxSize: number ): {price: number, size: number} | undefined{
+    tick_remove(maxSize) {
         const r1 = Math.random();
         const size = r1 * maxSize;
-        for(let price of this.orders.keys()){
+        for (let price of this.orders.keys()) {
             let remainder = maxSize - this.remove_order(price, size);
-            
-            if( remainder > 0 ) { 
-                this.tick_remove( remainder ); 
-                return {price, size}; 
+            if (remainder > 0) {
+                this.tick_remove(remainder);
+                return { price, size };
             }
-            else continue;
+            else
+                continue;
         }
         return undefined;
     }
 }
+exports.Orderbook = Orderbook;
+//# sourceMappingURL=order_book.js.map

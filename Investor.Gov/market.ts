@@ -1,8 +1,10 @@
+import i_Orderbook = require("./order_book");
+
 type candle = { min: number, max : number, open: number, close: number }
 
 const _maxOrderSize = 100;
 
-class Market {
+export class Market {
 
     lastPrice: number;
 
@@ -12,9 +14,9 @@ class Market {
     /** Percentage of stock that can be traded */
     stock_per_order: number
 
-    sellBook: Orderbook;
+    sellBook: i_Orderbook.Orderbook;
 
-    buyBook: Orderbook;
+    buyBook: i_Orderbook.Orderbook;
     
     /**
      * 
@@ -31,11 +33,11 @@ class Market {
         this.stock_per_order = stock_per_order;
 
         /** Initialising the sellBook */
-        this.sellBook = new Orderbook();
+        this.sellBook = new i_Orderbook.Orderbook();
         this.sellBook.total = stock;
 
         /** Initialising the buyBook */
-        this.buyBook = new Orderbook();
+        this.buyBook = new i_Orderbook.Orderbook();
 
     }
 
@@ -52,7 +54,7 @@ class Market {
     }
 }
 
-class Graph { 
+export class Graph { 
 
     canvas: HTMLCanvasElement;
 
@@ -96,7 +98,7 @@ class Graph {
 
     draw(){
 
-        let ctx = canvas.getContext("2d");
+        let ctx = this.canvas.getContext("2d");
         let width = this.canvas.width / this.amt
 
         this.candles.forEach( ( candle, i ) => {
