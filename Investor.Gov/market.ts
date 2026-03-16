@@ -42,15 +42,27 @@ export class Market {
     }
 
     makeOrder () {
-        let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order )
+        const remaining = Math.max(0, this.stock - (this.buyBook.total + this.sellBook.total));
+        if (remaining <= 0) { return; }
+
+        const amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order, remaining / 2 );
         this.buyBook.tick_add( amount, this.lastPrice );
         this.sellBook.tick_add( amount, this.lastPrice );
     }
 
     takeOrder () {
         let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order );
-        this.buyBook.tick_remove( amount );
-        this.sellBook.tick_remove( amount );
+        let buyLast = this.buyBook.tick_remove( amount, this.lastPrice );
+        let sellLast = this.sellBook.tick_remove( amount, this.lastPrice );
+
+        if ( buyLast && sellLast ) {
+            const totalSize = buyLast.size + sellLast.size;
+            this.lastPrice = (buyLast.price * buyLast.size + sellLast.price * sellLast.size) / totalSize;
+        } else if ( buyLast ) {
+            this.lastPrice = buyLast.price;
+        } else if ( sellLast ) {
+            this.lastPrice = sellLast.price;
+        }
     }
 }
 
@@ -78,6 +90,9 @@ export class Graph {
 
     startCandle ( price: number ) {
         this.candles.push(this.liveCandle);
+        if (this.candles.length > this.amt * 2) {
+            this.candles = this.candles.slice(-this.amt * 2);
+        }
 
         this.liveCandle = {
             min: Infinity,
@@ -99,23 +114,46 @@ export class Graph {
     draw(){
 
         let ctx = this.canvas.getContext("2d");
-        let width = this.canvas.width / this.amt
+        let width = this.canvas.width / this.amt;
+        if (!ctx) { console.log("no Context"); return; }
 
-        this.candles.forEach( ( candle, i ) => {
-            if(!ctx){ return;}
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const visible = this.candles
+        .slice(-this.amt)
+        .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+        if (visible.length === 0) { return; }
+
+        let minPrice = Infinity;
+        let maxPrice = -Infinity;
+        visible.forEach((c) => {
+            minPrice = Math.min(minPrice, c.min);
+            maxPrice = Math.max(maxPrice, c.max);
+        });
+
+        const priceSpan = Math.max(1, maxPrice - minPrice);
+        const toY = (price: number) =>
+            this.canvas.height - ((price - minPrice) / priceSpan) * this.canvas.height;
+
+        visible.forEach( ( candle, i ) => {
+            const x = i * width;
 
             ctx.fillStyle = candle.open < candle.close ? "green" : "red";
 
             ctx.beginPath();
-            ctx.moveTo( width, candle.min );
-            ctx.lineTo( width, candle.max );
+            ctx.moveTo( x, toY(candle.min) );
+            ctx.lineTo( x, toY(candle.max) );
             ctx.stroke();
 
-            ctx.rect( width - width/2, candle.open, width, candle.close - candle.open );
+            const openY = toY(candle.open);
+            const closeY = toY(candle.close);
+            const bodyTop = Math.min(openY, closeY);
+            const bodyHeight = Math.max(1, Math.abs(openY - closeY));
+
+            ctx.rect( x - width/2, bodyTop, width, bodyHeight );
 
             ctx.fill();
         });
-        
     }
 
 }

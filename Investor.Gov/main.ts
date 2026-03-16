@@ -5,7 +5,7 @@ import { Graph } from "./market.js";
 let canvas: HTMLCanvasElement;
 export let market: Market;
 let graph: Graph;
-const stock = 1000;
+const stock = 10;
 const initialPrice = 100;
 
 let ticks = 0;
@@ -45,7 +45,11 @@ function Update(){
         market.takeOrder();
     }
     graph.updateCandle(market.lastPrice);
-    graph.draw();
+    if (ticks % 4 === 0) {
+        graph.draw();
+    }
+
+    //market.lastPrice += (Math.random() - 0.5) * 2;
 
     if(ticks % 10 == 0){ graph.startCandle( market.lastPrice ); };
 

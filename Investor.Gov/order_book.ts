@@ -37,13 +37,13 @@ export class Orderbook {
      * @param oSize Order Size
      * @returns Trade Size, or -1 on failure
      */
-    private remove_order ( oPrice: number, oSize: number ): number {
+    private remove_order ( oPrice: number, oSize: number, tPrice: number ): number {
 
         let order = this.orders.get(oPrice);
 
         if ( !order ) { return -1; }
         
-        if ( !order.con( oPrice ) ) { return -1; };
+        if ( !order.con( tPrice ) ) { return -1; };
 
         /** Traded Size */
         let tSize = Math.min( oSize, order.size );
@@ -52,8 +52,7 @@ export class Orderbook {
         let rSize = order.size - tSize;
 
         if ( rSize <= 0 ) this.orders.delete( oPrice );
-
-        this.orders.set( oPrice, {size: rSize, con: order.con} );
+        else this.orders.set( oPrice, {size: rSize, con: order.con} );
 
         this.total -= tSize;
 
@@ -76,21 +75,21 @@ export class Orderbook {
             const r3 = Math.random();
             let oSize = r3 * maxSize;
 
-            const r4 = Math.random();
-            let isAbove = r4 > 0.5;
+            // Align order side with price relative to last price so it can execute.
+            let isAbove = oPrice > lastPrice;
 
             /** Doesn't Execute if oPrice already holds an Order */
             this.add_order( oPrice, oSize, isAbove );
         }
         
     }
-    tick_remove ( maxSize: number ): {price: number, size: number} | undefined{
+    tick_remove ( maxSize: number, tPrice: number ): {price: number, size: number} | undefined{
         const r1 = Math.random();
         let remaining = r1 * maxSize;
         let lastTrade: {price: number, size: number} | undefined;
 
         for ( let price of this.orders.keys() ) {
-            const traded = this.remove_order( price, remaining );
+            const traded = this.remove_order( price, remaining, tPrice );
             if ( traded <= 0 ) { continue; }
 
             lastTrade = { price, size: traded };

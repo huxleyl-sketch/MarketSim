@@ -19,7 +19,7 @@ export declare class Orderbook {
     private remove_order;
     /** Adds an order at a Tick */
     tick_add(maxSize: number, lastPrice: number): void;
-    tick_remove(maxSize: number): {
+    tick_remove(maxSize: number, tPrice: number): {
         price: number;
         size: number;
     } | undefined;
