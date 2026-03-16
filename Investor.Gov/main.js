@@ -1,8 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.market = void 0;
-const i_Market = require("./market");
+import { Market } from "./market";
+import { Graph } from "./market";
 let canvas;
+export let market;
 let graph;
 const stock = 1000;
 const initialPrice = 100;
@@ -15,8 +14,8 @@ function main() {
      */
     // currently unsafe use of as - need to update to satisfies
     canvas = document.getElementById('canvas');
-    exports.market = new i_Market.Market(initialPrice, stock, 0.01);
-    graph = new i_Market.Graph(canvas, [], 10);
+    market = new Market(initialPrice, stock, 0.01);
+    graph = new Graph(canvas, [], 10);
     graph.startCandle(initialPrice);
     /** Initialise Update */
     requestAnimationFrame(Update);
@@ -28,15 +27,15 @@ function main() {
 function Update() {
     ticks++;
     for (let i = 0; i < stock; i++) {
-        exports.market.makeOrder();
+        market.makeOrder();
     }
     for (let i = 0; i < stock; i++) {
-        exports.market.takeOrder();
+        market.takeOrder();
     }
-    graph.updateCandle(exports.market.lastPrice);
+    graph.updateCandle(market.lastPrice);
     graph.draw();
     if (ticks % 10 == 0) {
-        graph.startCandle(exports.market.lastPrice);
+        graph.startCandle(market.lastPrice);
     }
     ;
     requestAnimationFrame(Update);

@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Orderbook = void 0;
-const i_Main = require("./main");
+import { market } from "./main";
 /*
 Order book is a list of pending orders - indefinate
 
 Needs to transfer them to Market Orders - On some condition
 */
 /* Generalising the principle that individual traders don't matter, iff, the trades and amount of stock are accounted for. */
-class Orderbook {
+export class Orderbook {
     /**
      *  All current orders in book.
      *  Map<price, {size,condition}>
@@ -62,7 +59,7 @@ class Orderbook {
             /** oPrice :- [0.99 * lastPrice, 1.01 * lastPrice] */
             const r2 = Math.random();
             const radius = (2 * r2 - 1) / 100;
-            let oPrice = i_Main.market.lastPrice * (1 + radius);
+            let oPrice = market.lastPrice * (1 + radius);
             /** oSize :- [0,_maxOrderSize] */
             const r3 = Math.random();
             let oSize = r3 * maxSize;
@@ -87,5 +84,4 @@ class Orderbook {
         return undefined;
     }
 }
-exports.Orderbook = Orderbook;
 //# sourceMappingURL=order_book.js.map

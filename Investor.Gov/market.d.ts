@@ -1,4 +1,4 @@
-import i_Orderbook = require("./order_book");
+import { Orderbook } from "./order_book";
 type candle = {
     min: number;
     max: number;
@@ -11,8 +11,8 @@ export declare class Market {
     stock: number;
     /** Percentage of stock that can be traded */
     stock_per_order: number;
-    sellBook: i_Orderbook.Orderbook;
-    buyBook: i_Orderbook.Orderbook;
+    sellBook: Orderbook;
+    buyBook: Orderbook;
     /**
      *
      * @param initialPrice

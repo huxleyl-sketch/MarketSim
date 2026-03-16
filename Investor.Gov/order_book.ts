@@ -1,4 +1,4 @@
-import i_Main = require("./main");
+import { market } from "./main";
 /*
 Order book is a list of pending orders - indefinate
 
@@ -71,7 +71,7 @@ export class Orderbook {
             /** oPrice :- [0.99 * lastPrice, 1.01 * lastPrice] */
             const r2 = Math.random();
             const radius = (2 * r2 - 1) / 100;
-            let oPrice =  i_Main.market.lastPrice * (1 + radius);
+            let oPrice =  market.lastPrice * (1 + radius);
 
             /** oSize :- [0,_maxOrderSize] */
             const r3 = Math.random();

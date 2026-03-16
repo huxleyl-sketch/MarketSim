@@ -1,10 +1,10 @@
-import i_Market = require("./market");
-import Graph = require("./market");
+import { Market } from "./market";
+import { Graph } from "./market";
 
 
 let canvas: HTMLCanvasElement;
-export let market: i_Market.Market;
-let graph: i_Market.Graph;
+export let market: Market;
+let graph: Graph;
 const stock = 1000;
 const initialPrice = 100;
 
@@ -20,8 +20,8 @@ function main(){
 
     // currently unsafe use of as - need to update to satisfies
     canvas = document.getElementById( 'canvas' ) as HTMLCanvasElement;
-    market = new i_Market.Market( initialPrice, stock, 0.01 );
-    graph = new i_Market.Graph( canvas, [], 10 );
+    market = new Market( initialPrice, stock, 0.01 );
+    graph = new Graph( canvas, [], 10 );
 
     graph.startCandle( initialPrice );
 

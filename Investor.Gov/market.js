@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Graph = exports.Market = void 0;
-const i_Orderbook = require("./order_book");
+import { Orderbook } from "./order_book";
 const _maxOrderSize = 100;
-class Market {
+export class Market {
     lastPrice;
     /** Total amount of Stock */
     stock;
@@ -24,10 +21,10 @@ class Market {
         this.stock = stock;
         this.stock_per_order = stock_per_order;
         /** Initialising the sellBook */
-        this.sellBook = new i_Orderbook.Orderbook();
+        this.sellBook = new Orderbook();
         this.sellBook.total = stock;
         /** Initialising the buyBook */
-        this.buyBook = new i_Orderbook.Orderbook();
+        this.buyBook = new Orderbook();
     }
     makeOrder() {
         let amount = Math.min(_maxOrderSize, this.stock * this.stock_per_order);
@@ -40,8 +37,7 @@ class Market {
         this.sellBook.tick_remove(amount);
     }
 }
-exports.Market = Market;
-class Graph {
+export class Graph {
     canvas;
     liveCandle;
     candles;
@@ -87,5 +83,4 @@ class Graph {
         });
     }
 }
-exports.Graph = Graph;
 //# sourceMappingURL=market.js.map

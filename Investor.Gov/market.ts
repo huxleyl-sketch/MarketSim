@@ -1,4 +1,4 @@
-import i_Orderbook = require("./order_book");
+import { Orderbook } from "./order_book";
 
 type candle = { min: number, max : number, open: number, close: number }
 
@@ -14,9 +14,9 @@ export class Market {
     /** Percentage of stock that can be traded */
     stock_per_order: number
 
-    sellBook: i_Orderbook.Orderbook;
+    sellBook: Orderbook;
 
-    buyBook: i_Orderbook.Orderbook;
+    buyBook: Orderbook;
     
     /**
      * 
@@ -33,11 +33,11 @@ export class Market {
         this.stock_per_order = stock_per_order;
 
         /** Initialising the sellBook */
-        this.sellBook = new i_Orderbook.Orderbook();
+        this.sellBook = new Orderbook();
         this.sellBook.total = stock;
 
         /** Initialising the buyBook */
-        this.buyBook = new i_Orderbook.Orderbook();
+        this.buyBook = new Orderbook();
 
     }
 
