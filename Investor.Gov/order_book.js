@@ -70,17 +70,20 @@ export class Orderbook {
     }
     tick_remove(maxSize) {
         const r1 = Math.random();
-        const size = r1 * maxSize;
+        let remaining = r1 * maxSize;
+        let lastTrade;
         for (let price of this.orders.keys()) {
-            let remainder = maxSize - this.remove_order(price, size);
-            if (remainder > 0) {
-                this.tick_remove(remainder);
-                return { price, size };
-            }
-            else
+            const traded = this.remove_order(price, remaining);
+            if (traded <= 0) {
                 continue;
+            }
+            lastTrade = { price, size: traded };
+            remaining -= traded;
+            if (remaining <= 0) {
+                return lastTrade;
+            }
         }
-        return undefined;
+        return lastTrade;
     }
 }
 //# sourceMappingURL=order_book.js.map

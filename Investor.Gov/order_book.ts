@@ -86,16 +86,19 @@ export class Orderbook {
     }
     tick_remove ( maxSize: number ): {price: number, size: number} | undefined{
         const r1 = Math.random();
-        const size = r1 * maxSize;
-        for(let price of this.orders.keys()){
-            let remainder = maxSize - this.remove_order(price, size);
-            
-            if( remainder > 0 ) { 
-                this.tick_remove( remainder ); 
-                return {price, size}; 
-            }
-            else continue;
+        let remaining = r1 * maxSize;
+        let lastTrade: {price: number, size: number} | undefined;
+
+        for ( let price of this.orders.keys() ) {
+            const traded = this.remove_order( price, remaining );
+            if ( traded <= 0 ) { continue; }
+
+            lastTrade = { price, size: traded };
+            remaining -= traded;
+
+            if ( remaining <= 0 ) { return lastTrade; }
         }
-        return undefined;
+
+        return lastTrade;
     }
 }
