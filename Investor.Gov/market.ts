@@ -1,37 +1,66 @@
 type candle = { min: number, max : number, open: number, close: number }
 
+const _maxOrderSize = 100;
+
 class Market {
 
     lastPrice: number;
 
-    liveCandle: candle;
+    /** Total amount of Stock */
+    stock: number;
 
     sellBook: Orderbook;
 
     buyBook: Orderbook;
     
+    graph: Graph;
+    
+    constructor (initialPrice: number, stock: number, canvas: HTMLCanvasElement) {
+        
+        /** Initialising Default Values */
+        this.lastPrice = initialPrice;
+        this.stock = stock;
+        this.graph = new Graph(canvas,[],10);
 
-    
-    graph: { 
-        canvas: HTMLCanvasElement,
-        candles: candle[],
-        width: number;
-    };
-    
-    constructor (canvas: HTMLCanvasElement) {
-        this.lastPrice = tradeAmt;
+        /** Initialising the sellBook */
+        this.sellBook = new Orderbook();
+        this.sellBook.total = stock;
+
+        /** Initialising the buyBook */
+        this.buyBook = new Orderbook();
+
+    }
+    addSellOrder () { this.sellBook.tickAdd( this.lastPrice,_maxOrderSize ); }
+    removeSellOrder () { this.sellBook.tickRemove( _maxOrderSize ); }
+
+    addBuyOrder(){ this.buyBook.tickAdd(this.lastPrice,_maxOrderSize); }
+    removeBuyOrder () { this.buyBook.tickRemove( _maxOrderSize ); }
+}
+
+class Graph { 
+
+    canvas: HTMLCanvasElement;
+
+    liveCandle: candle;
+
+    candles: candle[];
+
+    /** Amount of candles visible */
+    amt: number;
+
+
+    constructor (canvas: HTMLCanvasElement, candles: candle[] = [], amt: number) {
+        this.canvas = canvas;
+
+        this.candles = candles;
+
+        this.amt = amt;
 
         this.liveCandle = {min: Infinity, max: 0, open: 0, close: 0};
-
-        this.graph = {
-            canvas,
-            candles: [],
-            width: 10,
-        }
     }
 
     startCandle ( price: number ) {
-        this.graph.candles.push(this.liveCandle);
+        this.candles.push(this.liveCandle);
 
         this.liveCandle = {
             min: Infinity,
@@ -41,7 +70,7 @@ class Market {
         }
     }
 
-    updateCandle ( price: number, size: number ){
+    updateCandle ( price: number ){
         this.liveCandle = {
             min: Math.min(price,this.liveCandle.min),
             max: Math.max(price,this.liveCandle.max),
@@ -51,12 +80,11 @@ class Market {
     }
 
     draw(){
-        let canvas = this.graph.canvas;
-        let width = this.graph.width;
 
         let ctx = canvas.getContext("2d");
-        
-        this.graph.candles.forEach( ( candle, i ) => {
+        let width = this.canvas.width / this.amt
+
+        this.candles.forEach( ( candle, i ) => {
             if(!ctx){ return;}
 
             ctx.fillStyle = candle.open < candle.close ? "green" : "red";
@@ -72,6 +100,6 @@ class Market {
         });
         
     }
-    
+
 }
 
