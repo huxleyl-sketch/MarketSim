@@ -10,6 +10,8 @@ const initialPrice = 100;
 
 let ticks = 0;
 
+let debugDiv: HTMLDivElement;
+
 main();
 function main(){
     
@@ -37,9 +39,9 @@ function main(){
     canvas.height = Math.floor(cssHeight * scale);
 
     // 4. Normalize the coordinate system
-    // This lets you draw using CSS pixel values (0 to cssWidth) 
-    // while the engine handles the high-res scaling behind the scenes.
     ctx?.scale(scale, scale);
+
+    debugDiv = document.getElementById("debug") as HTMLDivElement;
 
     market = new Market( initialPrice, stock, 0.01 );
     graph = new Graph( canvas, [], 10 );
@@ -61,20 +63,27 @@ function Update(){
     const TpC_input = document.getElementById("candle_size") as HTMLInputElement;
     const TpC = TpC_input.valueAsNumber;
 
-    ticks++;
     
+    
+    // NOTE: If orders are taken in the same frame they are created, you won't
+    // see much on-screen. Consider drawing before takeOrder() or throttling it.
     for( let i = 0; i < stock; i++ ) {
-        market.makeOrder();
+        market.makeOrder(ticks);
     }
+    
+    debugDiv.innerText = `
+    Total Orders: ${market.orderBook.orders.size} 
+    Total Stock: ${market.orderBook.total}
+    `;
     for( let i = 0; i < stock; i++ ) {
-        market.takeOrder();
+        market.takeOrder(ticks);
     }
     graph.updateCandle(market.lastPrice);
     if (ticks % TpC === 0) {
-        graph.draw();
+        graph.draw(market, ticks);
     }
 
     if(ticks % TpC == 0){ graph.startCandle( market.lastPrice ); };
-
+    ticks++;
     requestAnimationFrame(Update);
 }

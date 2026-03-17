@@ -14,7 +14,7 @@ export declare class Market {
      * @param canvas
      */
     constructor(initialPrice: number, stock: number, stock_per_order: number);
-    makeOrder(): void;
-    takeOrder(): void;
+    makeOrder(currentTick: number): void;
+    takeOrder(currentTick: number): void;
 }
 //# sourceMappingURL=market.d.ts.map

@@ -17,19 +17,29 @@ export class Orderbook {
      *  If !above - an order for a price below, price  
      *  Map<price, {size, above}> 
      */
-    orders: Map<number, {size:number , above: boolean}>;
+    orders: Map<number, {size:number , above: boolean, id: number, createdTick: number}>;
+    /** History of orders for drawing from creation to fill */
+    history: {id: number, price: number, size: number, above: boolean, createdTick: number, filledTick?: number}[];
+    private historyIndex: Map<number, number>;
+    private nextId: number;
     /** Total amount of stock in orders */
     total: number
 
     constructor ( ) {
         this.orders = new Map();
         this.total = 0;
+        this.history = [];
+        this.historyIndex = new Map();
+        this.nextId = 1;
     }
 
-    private add_order ( oPrice: number, oSize: number, isAbove: boolean ) {
+    private add_order ( oPrice: number, oSize: number, isAbove: boolean, createdTick: number ) {
         if(this.orders.has(oPrice)) return;
 
-        this.orders.set(oPrice, { size: oSize, above: isAbove });
+        const id = this.nextId++;
+        this.orders.set(oPrice, { size: oSize, above: isAbove, id, createdTick });
+        this.historyIndex.set(id, this.history.length);
+        this.history.push({ id, price: oPrice, size: oSize, above: isAbove, createdTick });
 
         this.total += oSize;
     }
@@ -38,7 +48,7 @@ export class Orderbook {
      * @param oSize Order Size
      * @returns Trade Size, or -1 on failure
      */
-    private remove_order ( oPrice: number, oSize: number, tPrice: number ): number {
+    private remove_order ( oPrice: number, oSize: number, tPrice: number, currentTick: number ): number {
 
         let order = this.orders.get(oPrice);
 
@@ -52,7 +62,17 @@ export class Orderbook {
         /** Remaining Size */
         let rSize = order.size - tSize;
 
-        if ( rSize <= 0 ) this.orders.delete( oPrice );
+        if ( rSize <= 0 ) {
+            this.orders.delete( oPrice );
+            // Mark when the order is fully filled so we can draw a finite path.
+            const idx = this.historyIndex.get(order.id);
+            if (idx !== undefined) {
+                const entry = this.history[idx];
+                if (entry && entry.filledTick === undefined) {
+                    entry.filledTick = currentTick;
+                }
+            }
+        }
         else order.size = rSize; /** Updates the reference to order size */
 
         this.total -= tSize;
@@ -61,7 +81,7 @@ export class Orderbook {
     } 
     
     /** Adds an order at a Tick */
-    tick_add (maxSize: number, lastPrice: number ) {
+    tick_add (maxSize: number, lastPrice: number, currentTick: number ) {
         const r1 = Math.random();
 
         /** 5/1000 chance */
@@ -76,21 +96,22 @@ export class Orderbook {
             const r3 = Math.random();
             let oSize = r3 * maxSize;
 
-            // Align order side with price relative to last price so it can execute.
-            let isAbove = oPrice > lastPrice;
+            // Align order side with price relative to last price so it can execute
+            const r4 = Math.random();
+            let isAbove = r4 > 0.2 ? oPrice > lastPrice : oPrice < lastPrice;
 
             /** Doesn't Execute if oPrice already holds an Order */
-            this.add_order( oPrice, oSize, isAbove );
+            this.add_order( oPrice, oSize, isAbove, currentTick );
         }
         
     }
-    tick_remove ( maxSize: number, tPrice: number ): {price: number, size: number} | undefined{
+    tick_remove ( maxSize: number, tPrice: number, currentTick: number ): {price: number, size: number} | undefined{
         const r1 = Math.random();
         let remaining = r1 * maxSize;
         let lastTrade: {price: number, size: number} | undefined;
 
         for ( let price of this.orders.keys() ) {
-            const traded = this.remove_order( price, remaining, tPrice );
+            const traded = this.remove_order( price, remaining, tPrice, currentTick );
             if ( traded <= 0 ) { continue; }
 
             lastTrade = { price, size: traded };

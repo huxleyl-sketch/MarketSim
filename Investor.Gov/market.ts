@@ -33,17 +33,17 @@ export class Market {
 
     }
 
-    makeOrder () {
+    makeOrder ( currentTick: number ) {
         const remaining = Math.max(0, this.stock - this.orderBook.total);
         if (remaining <= 0) { return; }
 
         const amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order, remaining / 2 );
-        this.orderBook.tick_add( amount, this.lastPrice );
+        this.orderBook.tick_add( amount, this.lastPrice, currentTick );
     }
 
-    takeOrder () {
+    takeOrder ( currentTick: number ) {
         let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order );
-        let last = this.orderBook.tick_remove( amount, this.lastPrice );
+        let last = this.orderBook.tick_remove( amount, this.lastPrice, currentTick );
         
         if(last) this.lastPrice = last.price;
     }

@@ -1,3 +1,5 @@
+import { Market } from "./market";
+
 type candle = { min: number, max : number, open: number, close: number }
 
 export class Graph { 
@@ -24,6 +26,7 @@ export class Graph {
 
     startCandle ( price: number ) {
         this.candles.push(this.liveCandle);
+
         if (this.candles.length > this.amt * 2) {
             this.candles = this.candles.slice(-this.amt * 2);
         }
@@ -44,40 +47,61 @@ export class Graph {
             close: price,
         }
     }
-    draw(){
+    draw(market: Market, currentTick: number){
         let ctx = this.canvas.getContext("2d");
         if (!ctx) { console.log("no Context"); return; }
 
         let history = document.getElementById("history") as HTMLInputElement;
         this.amt = history.valueAsNumber;
+        const tpcInput = document.getElementById("candle_size") as HTMLInputElement;
+        const ticksPerCandle = tpcInput.valueAsNumber;
         const height = this.canvas.height / window.devicePixelRatio;
         const width = this.canvas.width / window.devicePixelRatio;
         ctx.clearRect(0, 0, width, height);
 
-        this.drawCandles(ctx, width,height);
-        //this.drawOrders(ctx, width, height);
+        const { minPrice, maxPrice } = this.getPriceRange(
+            market,
+            currentTick,
+            this.amt * ticksPerCandle
+        );
+        if (!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)) { return; }
+        const priceSpan = Math.max(1, maxPrice - minPrice);
+
+        // Draw orders as horizontal paths from creation tick to fill tick (or now).
+        // This keeps historical order traces visible even after the order is taken.
+        this.drawOrders(
+            market,
+            width,
+            height,
+            ctx,
+            currentTick,
+            this.amt * ticksPerCandle,
+            minPrice,
+            priceSpan
+        );
+
+        this.drawCandles(market, ctx, width, height, minPrice, priceSpan);
     }
 
-    drawCandles(ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number){
+    drawCandles(
+        market: Market,
+        ctx: CanvasRenderingContext2D,
+        screenWidth: number,
+        screenHeight: number,
+        minPrice: number,
+        priceSpan: number
+    ){
 
         let width = screenWidth / this.amt;
-
-        const toY = (price: number) =>
-            screenHeight - ((price - minPrice) / priceSpan) * screenHeight;
 
         const visible = this.candles
         .slice(-this.amt)
         .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+
         if (visible.length === 0) { return; }
 
-        let minPrice = Infinity;
-        let maxPrice = -Infinity;
-        visible.forEach((c) => {
-            minPrice = Math.min(minPrice, c.min);
-            maxPrice = Math.max(maxPrice, c.max);
-        });
-
-        const priceSpan = Math.max(1, maxPrice - minPrice);
+        const toY = (price: number) =>
+            screenHeight - ((price - minPrice) / priceSpan) * screenHeight;
 
         visible.forEach( ( candle, i ) => {
             const x = i * width;
@@ -98,6 +122,91 @@ export class Graph {
 
             ctx.fill();
         });
+    }
+    drawOrders(
+        market: Market,
+        width: number,
+        height: number,
+        ctx: CanvasRenderingContext2D,
+        currentTick: number,
+        windowTicks: number,
+        minPrice: number,
+        priceSpan: number
+    ) {
+        const windowStart = Math.max(0, currentTick - windowTicks);
+        const visible = market.orderBook.history.filter((o) => {
+            const end = o.filledTick ?? currentTick;
+            return o.createdTick <= currentTick && end >= windowStart;
+        });
+
+        if (visible.length === 0) { return; }
+
+        let minSize = Infinity;
+        let maxSize = 0;
+
+        visible.forEach(o => {
+            minSize = Math.min(o.size, minSize);
+            maxSize = Math.max(o.size, maxSize);
+        });
+
+        const sizeSpan = Math.max(1, maxSize - minSize);
+
+        const toY = (price: number) =>
+            height - ((price - minPrice) / priceSpan) * height;
+        const toX = (tick: number) =>
+            ((tick - windowStart) / windowTicks) * width;
+
+        visible.forEach(o => {
+            // If you want true persistence without relying on history,
+            // draw onto an offscreen canvas and composite here each frame.
+            const startTick = Math.max(o.createdTick, windowStart);
+            const endTick = Math.min(o.filledTick ?? currentTick, currentTick);
+            if (endTick <= startTick) { return; }
+
+            const opacity = (o.size - minSize) / sizeSpan;
+            ctx.strokeStyle = o.above
+                ? `rgba(0, 255, 0, ${opacity})`
+                : `rgba(255, 0, 0, ${opacity})`;
+
+            ctx.beginPath();
+            ctx.moveTo(toX(startTick), toY(o.price));
+            ctx.lineTo(toX(endTick), toY(o.price));
+            ctx.stroke();
+        });
+    }
+
+    private getPriceRange(
+        market: Market,
+        currentTick: number,
+        windowTicks: number
+    ) {
+        let minPrice = Infinity;
+        let maxPrice = -Infinity;
+
+        const visibleCandles = this.candles
+            .slice(-this.amt)
+            .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+
+        visibleCandles.forEach((c) => {
+            minPrice = Math.min(minPrice, c.min);
+            maxPrice = Math.max(maxPrice, c.max);
+        });
+
+        [...market.orderBook.orders.keys()].forEach((price) => {
+            minPrice = Math.min(minPrice, price);
+            maxPrice = Math.max(maxPrice, price);
+        });
+
+        const windowStart = Math.max(0, currentTick - windowTicks);
+        market.orderBook.history.forEach((o) => {
+            const end = o.filledTick ?? currentTick;
+            if (o.createdTick <= currentTick && end >= windowStart) {
+                minPrice = Math.min(minPrice, o.price);
+                maxPrice = Math.max(maxPrice, o.price);
+            }
+        });
+
+        return { minPrice, maxPrice };
     }
 
 }

@@ -15,16 +15,26 @@ export class Orderbook {
      *  Map<price, {size, above}>
      */
     orders;
+    /** History of orders for drawing from creation to fill */
+    history;
+    historyIndex;
+    nextId;
     /** Total amount of stock in orders */
     total;
     constructor() {
         this.orders = new Map();
         this.total = 0;
+        this.history = [];
+        this.historyIndex = new Map();
+        this.nextId = 1;
     }
-    add_order(oPrice, oSize, isAbove) {
+    add_order(oPrice, oSize, isAbove, createdTick) {
         if (this.orders.has(oPrice))
             return;
-        this.orders.set(oPrice, { size: oSize, above: isAbove });
+        const id = this.nextId++;
+        this.orders.set(oPrice, { size: oSize, above: isAbove, id, createdTick });
+        this.historyIndex.set(id, this.history.length);
+        this.history.push({ id, price: oPrice, size: oSize, above: isAbove, createdTick });
         this.total += oSize;
     }
     /**
@@ -32,7 +42,7 @@ export class Orderbook {
      * @param oSize Order Size
      * @returns Trade Size, or -1 on failure
      */
-    remove_order(oPrice, oSize, tPrice) {
+    remove_order(oPrice, oSize, tPrice, currentTick) {
         let order = this.orders.get(oPrice);
         if (!order) {
             return -1;
@@ -45,15 +55,24 @@ export class Orderbook {
         let tSize = Math.min(oSize, order.size);
         /** Remaining Size */
         let rSize = order.size - tSize;
-        if (rSize <= 0)
+        if (rSize <= 0) {
             this.orders.delete(oPrice);
+            // Mark when the order is fully filled so we can draw a finite path.
+            const idx = this.historyIndex.get(order.id);
+            if (idx !== undefined) {
+                const entry = this.history[idx];
+                if (entry && entry.filledTick === undefined) {
+                    entry.filledTick = currentTick;
+                }
+            }
+        }
         else
             order.size = rSize; /** Updates the reference to order size */
         this.total -= tSize;
         return tSize;
     }
     /** Adds an order at a Tick */
-    tick_add(maxSize, lastPrice) {
+    tick_add(maxSize, lastPrice, currentTick) {
         const r1 = Math.random();
         /** 5/1000 chance */
         if (r1 < 0.005) {
@@ -64,18 +83,19 @@ export class Orderbook {
             /** oSize :- [0,_maxOrderSize] */
             const r3 = Math.random();
             let oSize = r3 * maxSize;
-            // Align order side with price relative to last price so it can execute.
-            let isAbove = oPrice > lastPrice;
+            // Align order side with price relative to last price so it can execute
+            const r4 = Math.random();
+            let isAbove = r4 > 0.2 ? oPrice > lastPrice : oPrice < lastPrice;
             /** Doesn't Execute if oPrice already holds an Order */
-            this.add_order(oPrice, oSize, isAbove);
+            this.add_order(oPrice, oSize, isAbove, currentTick);
         }
     }
-    tick_remove(maxSize, tPrice) {
+    tick_remove(maxSize, tPrice, currentTick) {
         const r1 = Math.random();
         let remaining = r1 * maxSize;
         let lastTrade;
         for (let price of this.orders.keys()) {
-            const traded = this.remove_order(price, remaining, tPrice);
+            const traded = this.remove_order(price, remaining, tPrice, currentTick);
             if (traded <= 0) {
                 continue;
             }
