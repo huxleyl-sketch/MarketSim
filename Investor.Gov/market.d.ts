@@ -1,10 +1,4 @@
 import { Orderbook } from "./order_book.js";
-type candle = {
-    min: number;
-    max: number;
-    open: number;
-    close: number;
-};
 export declare class Market {
     lastPrice: number;
     /** Total amount of Stock */
@@ -24,16 +18,4 @@ export declare class Market {
     makeOrder(): void;
     takeOrder(): void;
 }
-export declare class Graph {
-    canvas: HTMLCanvasElement;
-    liveCandle: candle;
-    candles: candle[];
-    /** Amount of candles visible */
-    amt: number;
-    constructor(canvas: HTMLCanvasElement, candles: candle[] | undefined, amt: number);
-    startCandle(price: number): void;
-    updateCandle(price: number): void;
-    draw(): void;
-}
-export {};
 //# sourceMappingURL=market.d.ts.map

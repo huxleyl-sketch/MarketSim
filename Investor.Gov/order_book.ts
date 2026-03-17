@@ -4,7 +4,10 @@ Order book is a list of pending orders - indefinate
 Needs to transfer them to Market Orders - On some condition
 */
 
-/* Generalising the principle that individual traders don't matter, iff, the trades and amount of stock are accounted for. */
+/* 
+Generalising the principle that individual traders don't matter, iff, the trades and amount of stock are accounted for. 
+This also includes, buy and sell orders, they are functionally equivalent, the only metric that matters is if they are limit orders or stop orders, on a market scale
+*/
 
 export class Orderbook {
 
