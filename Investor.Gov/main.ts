@@ -47,8 +47,8 @@ function main(){
     graph.startCandle( initialPrice );
 
     /** Initialise Update */
-    //requestAnimationFrame( Update );
-    setInterval(Update, 10);
+    requestAnimationFrame( Update );
+    //setInterval(Update, 10);
 }
 
 /**
@@ -74,9 +74,7 @@ function Update(){
         graph.draw();
     }
 
-    //market.lastPrice += (Math.random() - 0.5) * 2;
-
     if(ticks % TpC == 0){ graph.startCandle( market.lastPrice ); };
 
-    //requestAnimationFrame(Update);
+    requestAnimationFrame(Update);
 }

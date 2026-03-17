@@ -14,6 +14,7 @@ export declare class Graph {
     startCandle(price: number): void;
     updateCandle(price: number): void;
     draw(): void;
+    drawCandles(ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number): void;
 }
 export {};
 //# sourceMappingURL=graph.d.ts.map

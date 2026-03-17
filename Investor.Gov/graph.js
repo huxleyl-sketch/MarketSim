@@ -31,18 +31,22 @@ export class Graph {
         };
     }
     draw() {
-        let history = document.getElementById("history");
-        this.amt = history.valueAsNumber;
         let ctx = this.canvas.getContext("2d");
         if (!ctx) {
             console.log("no Context");
             return;
         }
-        const logicalHeight = this.canvas.height / window.devicePixelRatio;
-        const logicalWidth = this.canvas.width / window.devicePixelRatio;
-        let width = logicalWidth / this.amt;
-        const toY = (price) => logicalHeight - ((price - minPrice) / priceSpan) * logicalHeight;
-        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+        let history = document.getElementById("history");
+        this.amt = history.valueAsNumber;
+        const height = this.canvas.height / window.devicePixelRatio;
+        const width = this.canvas.width / window.devicePixelRatio;
+        ctx.clearRect(0, 0, width, height);
+        this.drawCandles(ctx, width, height);
+        //this.drawOrders(ctx, width, height);
+    }
+    drawCandles(ctx, screenWidth, screenHeight) {
+        let width = screenWidth / this.amt;
+        const toY = (price) => screenHeight - ((price - minPrice) / priceSpan) * screenHeight;
         const visible = this.candles
             .slice(-this.amt)
             .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));

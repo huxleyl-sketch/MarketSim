@@ -44,24 +44,26 @@ export class Graph {
             close: price,
         }
     }
-
     draw(){
-        let history = document.getElementById("history") as HTMLInputElement;
-        this.amt = history.valueAsNumber;
         let ctx = this.canvas.getContext("2d");
         if (!ctx) { console.log("no Context"); return; }
 
+        let history = document.getElementById("history") as HTMLInputElement;
+        this.amt = history.valueAsNumber;
+        const height = this.canvas.height / window.devicePixelRatio;
+        const width = this.canvas.width / window.devicePixelRatio;
+        ctx.clearRect(0, 0, width, height);
 
-        const logicalHeight = this.canvas.height / window.devicePixelRatio;
-        const logicalWidth = this.canvas.width / window.devicePixelRatio;
+        this.drawCandles(ctx, width,height);
+        //this.drawOrders(ctx, width, height);
+    }
 
-        let width = logicalWidth / this.amt;
+    drawCandles(ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number){
+
+        let width = screenWidth / this.amt;
 
         const toY = (price: number) =>
-            logicalHeight - ((price - minPrice) / priceSpan) * logicalHeight;
-
-        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
-
+            screenHeight - ((price - minPrice) / priceSpan) * screenHeight;
 
         const visible = this.candles
         .slice(-this.amt)

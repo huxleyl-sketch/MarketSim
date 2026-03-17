@@ -12,10 +12,12 @@ This also includes, buy and sell orders, they are functionally equivalent, the o
 export class Orderbook {
 
     /**
-     *  All current orders in book.
-     *  Map<price, {size,condition}> 
+     *  All current orders in book  
+     *  If  above - an order for a price above, price  
+     *  If !above - an order for a price below, price  
+     *  Map<price, {size, above}> 
      */
-    orders: Map<number, {size:number , con: (price: number) => boolean}>;
+    orders: Map<number, {size:number , above: boolean}>;
     /** Total amount of stock in orders */
     total: number
 
@@ -27,11 +29,7 @@ export class Orderbook {
     private add_order ( oPrice: number, oSize: number, isAbove: boolean ) {
         if(this.orders.has(oPrice)) return;
 
-        this.orders.set(oPrice, {
-            size: oSize,
-            /** traded price is either higher or lower than order price */
-            con: isAbove ? (tPrice) => tPrice < oPrice : (tPrice) => tPrice > oPrice
-        });
+        this.orders.set(oPrice, { size: oSize, above: isAbove });
 
         this.total += oSize;
     }
@@ -46,7 +44,7 @@ export class Orderbook {
 
         if ( !order ) { return -1; }
         
-        if ( !order.con( tPrice ) ) { return -1; };
+        if ( !order.above ? tPrice < oPrice : tPrice > oPrice ) { return -1; };
 
         /** Traded Size */
         let tSize = Math.min( oSize, order.size );
@@ -55,7 +53,7 @@ export class Orderbook {
         let rSize = order.size - tSize;
 
         if ( rSize <= 0 ) this.orders.delete( oPrice );
-        else this.orders.set( oPrice, {size: rSize, con: order.con} );
+        else order.size = rSize; /** Updates the reference to order size */
 
         this.total -= tSize;
 

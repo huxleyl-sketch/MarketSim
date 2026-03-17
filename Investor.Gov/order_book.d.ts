@@ -1,11 +1,13 @@
 export declare class Orderbook {
     /**
-     *  All current orders in book.
-     *  Map<price, {size,condition}>
+     *  All current orders in book
+     *  If  above - an order for a price above, price
+     *  If !above - an order for a price below, price
+     *  Map<price, {size, above}>
      */
     orders: Map<number, {
         size: number;
-        con: (price: number) => boolean;
+        above: boolean;
     }>;
     /** Total amount of stock in orders */
     total: number;
