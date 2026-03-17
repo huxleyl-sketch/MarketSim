@@ -5,8 +5,7 @@ export declare class Market {
     stock: number;
     /** Percentage of stock that can be traded */
     stock_per_order: number;
-    sellBook: Orderbook;
-    buyBook: Orderbook;
+    orderBook: Orderbook;
     /**
      *
      * @param initialPrice

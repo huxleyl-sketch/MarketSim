@@ -12,9 +12,7 @@ export class Market {
     /** Percentage of stock that can be traded */
     stock_per_order: number
 
-    sellBook: Orderbook;
-
-    buyBook: Orderbook;
+    orderBook: Orderbook;
     
     /**
      * 
@@ -30,36 +28,23 @@ export class Market {
         this.stock = stock;
         this.stock_per_order = stock_per_order;
 
-        /** Initialising the sellBook */
-        this.sellBook = new Orderbook();
-        //this.sellBook.total = stock;
-
-        /** Initialising the buyBook */
-        this.buyBook = new Orderbook();
+        /** Initialising the orderBook */
+        this.orderBook = new Orderbook();
 
     }
 
     makeOrder () {
-        const remaining = Math.max(0, this.stock - (this.buyBook.total + this.sellBook.total));
+        const remaining = Math.max(0, this.stock - this.orderBook.total);
         if (remaining <= 0) { return; }
 
         const amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order, remaining / 2 );
-        this.buyBook.tick_add( amount, this.lastPrice );
-        this.sellBook.tick_add( amount, this.lastPrice );
+        this.orderBook.tick_add( amount, this.lastPrice );
     }
 
     takeOrder () {
         let amount = Math.min( _maxOrderSize, this.stock * this.stock_per_order );
-        let buyLast = this.buyBook.tick_remove( amount, this.lastPrice );
-        let sellLast = this.sellBook.tick_remove( amount, this.lastPrice );
-
-        if ( buyLast && sellLast ) {
-            const totalSize = buyLast.size + sellLast.size;
-            this.lastPrice = (buyLast.price * buyLast.size + sellLast.price * sellLast.size) / totalSize;
-        } else if ( buyLast ) {
-            this.lastPrice = buyLast.price;
-        } else if ( sellLast ) {
-            this.lastPrice = sellLast.price;
-        }
+        let last = this.orderBook.tick_remove( amount, this.lastPrice );
+        
+        if(last) this.lastPrice = last.price;
     }
 }
