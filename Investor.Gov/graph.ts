@@ -1,6 +1,7 @@
 import { Market } from "./market";
 
 type candle = { min: number, max : number, open: number, close: number }
+type pricePoint = { tick: number, price: number }
 
 export class Graph { 
 
@@ -9,6 +10,8 @@ export class Graph {
     liveCandle: candle;
 
     candles: candle[];
+
+    priceHistory: pricePoint[];
 
     /** Amount of candles visible */
     amt: number;
@@ -22,6 +25,8 @@ export class Graph {
         this.amt = amt;
 
         this.liveCandle = {min: Infinity, max: 0, open: 0, close: 0};
+
+        this.priceHistory = [];
     }
 
     startCandle ( price: number ) {
@@ -39,7 +44,8 @@ export class Graph {
         }
     }
 
-    updateCandle ( price: number ){
+    updateCandle ( price: number, tick: number ){
+        this.priceHistory.push({ tick, price });
         this.liveCandle = {
             min: Math.min(price,this.liveCandle.min),
             max: Math.max(price,this.liveCandle.max),
@@ -59,11 +65,7 @@ export class Graph {
         const width = this.canvas.width / window.devicePixelRatio;
         ctx.clearRect(0, 0, width, height);
 
-        const { minPrice, maxPrice } = this.getPriceRange(
-            market,
-            currentTick,
-            this.amt * ticksPerCandle
-        );
+        const { minPrice, maxPrice } = this.getPriceRange(market, currentTick, ticksPerCandle);
         if (!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)) { return; }
         const priceSpan = Math.max(1, maxPrice - minPrice);
 
@@ -80,7 +82,16 @@ export class Graph {
             priceSpan
         );
 
-        this.drawCandles(market, ctx, width, height, minPrice, priceSpan);
+        this.drawCandles(
+            market,
+            ctx,
+            width,
+            height,
+            minPrice,
+            priceSpan,
+            currentTick,
+            ticksPerCandle
+        );
     }
 
     drawCandles(
@@ -89,14 +100,14 @@ export class Graph {
         screenWidth: number,
         screenHeight: number,
         minPrice: number,
-        priceSpan: number
+        priceSpan: number,
+        currentTick: number,
+        ticksPerCandle: number
     ){
 
         let width = screenWidth / this.amt;
 
-        const visible = this.candles
-        .slice(-this.amt)
-        .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+        const visible = this.buildCandles(currentTick, ticksPerCandle);
 
         if (visible.length === 0) { return; }
 
@@ -178,14 +189,12 @@ export class Graph {
     private getPriceRange(
         market: Market,
         currentTick: number,
-        windowTicks: number
+        ticksPerCandle: number
     ) {
         let minPrice = Infinity;
         let maxPrice = -Infinity;
 
-        const visibleCandles = this.candles
-            .slice(-this.amt)
-            .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+        const visibleCandles = this.buildCandles(currentTick, ticksPerCandle);
 
         visibleCandles.forEach((c) => {
             minPrice = Math.min(minPrice, c.min);
@@ -197,6 +206,7 @@ export class Graph {
             maxPrice = Math.max(maxPrice, price);
         });
 
+        const windowTicks = this.amt * ticksPerCandle;
         const windowStart = Math.max(0, currentTick - windowTicks);
         market.orderBook.history.forEach((o) => {
             const end = o.filledTick ?? currentTick;
@@ -207,6 +217,47 @@ export class Graph {
         });
 
         return { minPrice, maxPrice };
+    }
+
+    private buildCandles(currentTick: number, ticksPerCandle: number) {
+        const windowTicks = this.amt * ticksPerCandle;
+        const windowStart = Math.max(0, currentTick - windowTicks);
+        const keepFrom = Math.max(0, windowStart - windowTicks);
+
+        if (this.priceHistory.length > 0) {
+            let firstKeep = 0;
+            while (
+                firstKeep < this.priceHistory.length 
+                && this?.priceHistory?.[firstKeep]?.tick < keepFrom
+            ) {
+                firstKeep++;
+            }
+            if (firstKeep > 0) {
+                this.priceHistory = this.priceHistory.slice(firstKeep);
+            }
+        }
+
+        const candles: candle[] = [];
+        let current: candle | null = null;
+        let currentIndex = -1;
+
+        for (const p of this.priceHistory) {
+            if (p.tick < windowStart || p.tick > currentTick) { continue; }
+            const index = Math.floor((p.tick - windowStart) / ticksPerCandle);
+            if (index !== currentIndex) {
+                if (current) { candles.push(current); }
+                currentIndex = index;
+                current = { min: p.price, max: p.price, open: p.price, close: p.price };
+                continue;
+            }
+            if (!current) { continue; }
+            current.min = Math.min(current.min, p.price);
+            current.max = Math.max(current.max, p.price);
+            current.close = p.price;
+        }
+
+        if (current) { candles.push(current); }
+        return candles;
     }
 
 }

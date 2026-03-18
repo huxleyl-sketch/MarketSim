@@ -78,7 +78,7 @@ function Update(){
     for( let i = 0; i < stock; i++ ) {
         market.takeOrder(ticks);
     }
-    graph.updateCandle(market.lastPrice);
+    graph.updateCandle(market.lastPrice, ticks);
     if (ticks % TpC === 0) {
         graph.draw(market, ticks);
     }

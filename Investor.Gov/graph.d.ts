@@ -5,19 +5,25 @@ type candle = {
     open: number;
     close: number;
 };
+type pricePoint = {
+    tick: number;
+    price: number;
+};
 export declare class Graph {
     canvas: HTMLCanvasElement;
     liveCandle: candle;
     candles: candle[];
+    priceHistory: pricePoint[];
     /** Amount of candles visible */
     amt: number;
     constructor(canvas: HTMLCanvasElement, candles: candle[] | undefined, amt: number);
     startCandle(price: number): void;
-    updateCandle(price: number): void;
+    updateCandle(price: number, tick: number): void;
     draw(market: Market, currentTick: number): void;
-    drawCandles(market: Market, ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number, minPrice: number, priceSpan: number): void;
+    drawCandles(market: Market, ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number, minPrice: number, priceSpan: number, currentTick: number, ticksPerCandle: number): void;
     drawOrders(market: Market, width: number, height: number, ctx: CanvasRenderingContext2D, currentTick: number, windowTicks: number, minPrice: number, priceSpan: number): void;
     private getPriceRange;
+    private buildCandles;
 }
 export {};
 //# sourceMappingURL=graph.d.ts.map

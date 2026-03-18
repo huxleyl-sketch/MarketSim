@@ -2,6 +2,7 @@ export class Graph {
     canvas;
     liveCandle;
     candles;
+    priceHistory;
     /** Amount of candles visible */
     amt;
     constructor(canvas, candles = [], amt) {
@@ -9,6 +10,7 @@ export class Graph {
         this.candles = candles;
         this.amt = amt;
         this.liveCandle = { min: Infinity, max: 0, open: 0, close: 0 };
+        this.priceHistory = [];
     }
     startCandle(price) {
         this.candles.push(this.liveCandle);
@@ -22,7 +24,8 @@ export class Graph {
             close: price,
         };
     }
-    updateCandle(price) {
+    updateCandle(price, tick) {
+        this.priceHistory.push({ tick, price });
         this.liveCandle = {
             min: Math.min(price, this.liveCandle.min),
             max: Math.max(price, this.liveCandle.max),
@@ -43,7 +46,7 @@ export class Graph {
         const height = this.canvas.height / window.devicePixelRatio;
         const width = this.canvas.width / window.devicePixelRatio;
         ctx.clearRect(0, 0, width, height);
-        const { minPrice, maxPrice } = this.getPriceRange(market, currentTick, this.amt * ticksPerCandle);
+        const { minPrice, maxPrice } = this.getPriceRange(market, currentTick, ticksPerCandle);
         if (!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)) {
             return;
         }
@@ -51,13 +54,11 @@ export class Graph {
         // Draw orders as horizontal paths from creation tick to fill tick (or now).
         // This keeps historical order traces visible even after the order is taken.
         this.drawOrders(market, width, height, ctx, currentTick, this.amt * ticksPerCandle, minPrice, priceSpan);
-        this.drawCandles(market, ctx, width, height, minPrice, priceSpan);
+        this.drawCandles(market, ctx, width, height, minPrice, priceSpan, currentTick, ticksPerCandle);
     }
-    drawCandles(market, ctx, screenWidth, screenHeight, minPrice, priceSpan) {
+    drawCandles(market, ctx, screenWidth, screenHeight, minPrice, priceSpan, currentTick, ticksPerCandle) {
         let width = screenWidth / this.amt;
-        const visible = this.candles
-            .slice(-this.amt)
-            .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+        const visible = this.buildCandles(currentTick, ticksPerCandle);
         if (visible.length === 0) {
             return;
         }
@@ -113,12 +114,10 @@ export class Graph {
             ctx.stroke();
         });
     }
-    getPriceRange(market, currentTick, windowTicks) {
+    getPriceRange(market, currentTick, ticksPerCandle) {
         let minPrice = Infinity;
         let maxPrice = -Infinity;
-        const visibleCandles = this.candles
-            .slice(-this.amt)
-            .filter(c => Number.isFinite(c.min) && Number.isFinite(c.max));
+        const visibleCandles = this.buildCandles(currentTick, ticksPerCandle);
         visibleCandles.forEach((c) => {
             minPrice = Math.min(minPrice, c.min);
             maxPrice = Math.max(maxPrice, c.max);
@@ -127,6 +126,7 @@ export class Graph {
             minPrice = Math.min(minPrice, price);
             maxPrice = Math.max(maxPrice, price);
         });
+        const windowTicks = this.amt * ticksPerCandle;
         const windowStart = Math.max(0, currentTick - windowTicks);
         market.orderBook.history.forEach((o) => {
             const end = o.filledTick ?? currentTick;
@@ -136,6 +136,48 @@ export class Graph {
             }
         });
         return { minPrice, maxPrice };
+    }
+    buildCandles(currentTick, ticksPerCandle) {
+        const windowTicks = this.amt * ticksPerCandle;
+        const windowStart = Math.max(0, currentTick - windowTicks);
+        const keepFrom = Math.max(0, windowStart - windowTicks);
+        if (this.priceHistory.length > 0) {
+            let firstKeep = 0;
+            while (firstKeep < this.priceHistory.length
+                && this?.priceHistory?.[firstKeep]?.tick < keepFrom) {
+                firstKeep++;
+            }
+            if (firstKeep > 0) {
+                this.priceHistory = this.priceHistory.slice(firstKeep);
+            }
+        }
+        const candles = [];
+        let current = null;
+        let currentIndex = -1;
+        for (const p of this.priceHistory) {
+            if (p.tick < windowStart || p.tick > currentTick) {
+                continue;
+            }
+            const index = Math.floor((p.tick - windowStart) / ticksPerCandle);
+            if (index !== currentIndex) {
+                if (current) {
+                    candles.push(current);
+                }
+                currentIndex = index;
+                current = { min: p.price, max: p.price, open: p.price, close: p.price };
+                continue;
+            }
+            if (!current) {
+                continue;
+            }
+            current.min = Math.min(current.min, p.price);
+            current.max = Math.max(current.max, p.price);
+            current.close = p.price;
+        }
+        if (current) {
+            candles.push(current);
+        }
+        return candles;
     }
 }
 //# sourceMappingURL=graph.js.map
